@@ -79,6 +79,14 @@ void AEnemyTwoHandsMeele::CombatOnOverlapBegin(UPrimitiveComponent* OverlappedCo
 	}
 }
 
+
+void AEnemyTwoHandsMeele::Die(AActor* DamageCauser)
+{
+	Super::Die(DamageCauser);
+
+	CombatCollisionRight->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+}
+
 void AEnemyTwoHandsMeele::ActivateCollisionRight()
 {
 	CombatCollisionRight->SetCollisionEnabled(ECollisionEnabled::QueryOnly);

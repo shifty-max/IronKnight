@@ -122,7 +122,6 @@ void AMain::BeginPlay()
 	UCustomGameInstance* CustomGameInstance = Cast<UCustomGameInstance>(GetGameInstance());
 	if (!CustomGameInstance->NewGame)
 	{	
-		UE_LOG(LogTemp, Warning, TEXT("No New Session"));
 		LoadGameNoSwitch();
 
 		//Remove mouse coursor from the screen
@@ -924,7 +923,6 @@ void AMain::SaveGame()
 	
 	FString MapName = GetWorld()->GetMapName();
 	MapName.RemoveFromStart(GetWorld()->StreamingLevelsPrefix);
-	UE_LOG(LogTemp, Warning, TEXT("Map name:%s"), *MapName);
 
 	SaveGameInstance->CharacterStats.LevelName = MapName;
 
@@ -943,44 +941,46 @@ void AMain::LoadGame(bool SetPosition)
 
 	LoadGameInstance = Cast<UFirstSaveGame> (UGameplayStatics::LoadGameFromSlot(LoadGameInstance->PLayerName, LoadGameInstance->UserIndex));
 
-	Health = LoadGameInstance->CharacterStats.Health;
-	MaxHealth = LoadGameInstance->CharacterStats.MaxHealth;
-	Stamina = LoadGameInstance->CharacterStats.Stamina;
-	MaxStamina = LoadGameInstance->CharacterStats.MaxStamina;
-	Coins = LoadGameInstance->CharacterStats.Coins;
-
-	//check if we have have created blueprint from ItemStorage class
-	if (WeaponStorage)
+	if (LoadGameInstance)
 	{
-		AItemStorage* Weapons = GetWorld()->SpawnActor<AItemStorage>(WeaponStorage);
-		if (Weapons)
+		if(LoadGameInstance->CharacterStats.LevelName != TEXT(""))
 		{
-			FString WeaponName = LoadGameInstance->CharacterStats.WeaponName;
+			Health = LoadGameInstance->CharacterStats.Health;
+			MaxHealth = LoadGameInstance->CharacterStats.MaxHealth;
+			Stamina = LoadGameInstance->CharacterStats.Stamina;
+			MaxStamina = LoadGameInstance->CharacterStats.MaxStamina;
+			Coins = LoadGameInstance->CharacterStats.Coins;
 
-			if(Weapons->WeaponMap.Contains(WeaponName) && WeaponName != TEXT(""))
+			//check if we have have created blueprint from ItemStorage class
+			if (WeaponStorage)
 			{
-				AWearpon* WeaponToEquip = GetWorld()->SpawnActor<AWearpon>( Weapons->WeaponMap[WeaponName]);
-				WeaponToEquip->Equip(this);
+				AItemStorage* Weapons = GetWorld()->SpawnActor<AItemStorage>(WeaponStorage);
+				if (Weapons)
+				{
+					FString WeaponName = LoadGameInstance->CharacterStats.WeaponName;
+
+					if(Weapons->WeaponMap.Contains(WeaponName) && WeaponName != TEXT(""))
+					{
+						AWearpon* WeaponToEquip = GetWorld()->SpawnActor<AWearpon>( Weapons->WeaponMap[WeaponName]);
+						WeaponToEquip->Equip(this);
+					}
+				}
 			}
+
+			//We can SetPosition = true to save player position or set it to false to start a level from a start
+			if (SetPosition)
+			{
+				SetActorLocation(LoadGameInstance->CharacterStats.Location);
+				SetActorRotation(LoadGameInstance->CharacterStats.Rotation);
+			}
+
+			SetMovementStatus(EMovementStatus::EMS_Normal);
+			GetMesh()->bPauseAnims = false;
+			GetMesh()->bNoSkeletonUpdate = false;
+
+			FName LevelName (*LoadGameInstance->CharacterStats.LevelName);
+			SwitchLevel(LevelName);
 		}
-	}
-
-	//We can SetPosition = true to save player position or set it to false to start a level from a start
-	if (SetPosition)
-	{
-		SetActorLocation(LoadGameInstance->CharacterStats.Location);
-		SetActorRotation(LoadGameInstance->CharacterStats.Rotation);
-	}
-
-	SetMovementStatus(EMovementStatus::EMS_Normal);
-	GetMesh()->bPauseAnims = false;
-	GetMesh()->bNoSkeletonUpdate = false;
-
-	if (LoadGameInstance->CharacterStats.LevelName != TEXT(""))
-	{
-		FName LevelName (*LoadGameInstance->CharacterStats.LevelName);
-
-		SwitchLevel(LevelName);
 	}
 }
 
@@ -989,34 +989,37 @@ void AMain::LoadGameNoSwitch()
 {
 	UFirstSaveGame* LoadGameInstance = Cast <UFirstSaveGame>(UGameplayStatics::CreateSaveGameObject(UFirstSaveGame::StaticClass()));
 
-	LoadGameInstance = Cast<UFirstSaveGame>(UGameplayStatics::LoadGameFromSlot(LoadGameInstance->PLayerName, LoadGameInstance->UserIndex));
-
-	Health = LoadGameInstance->CharacterStats.Health;
-	MaxHealth = LoadGameInstance->CharacterStats.MaxHealth;
-	Stamina = LoadGameInstance->CharacterStats.Stamina;
-	MaxStamina = LoadGameInstance->CharacterStats.MaxStamina;
-	Coins = LoadGameInstance->CharacterStats.Coins;
-
-	if (WeaponStorage)
+	if (LoadGameInstance)
 	{
-		AItemStorage* Weapons = GetWorld()->SpawnActor<AItemStorage>(WeaponStorage);
-		if (Weapons)
-		{
-			FString WeaponName = LoadGameInstance->CharacterStats.WeaponName;
+		LoadGameInstance = Cast<UFirstSaveGame>(UGameplayStatics::LoadGameFromSlot(LoadGameInstance->PLayerName, LoadGameInstance->UserIndex));
 
-			if (Weapons->WeaponMap.Contains(WeaponName))
+		Health = LoadGameInstance->CharacterStats.Health;
+		MaxHealth = LoadGameInstance->CharacterStats.MaxHealth;
+		Stamina = LoadGameInstance->CharacterStats.Stamina;
+		MaxStamina = LoadGameInstance->CharacterStats.MaxStamina;
+		Coins = LoadGameInstance->CharacterStats.Coins;
+
+		if (WeaponStorage)
+		{
+			AItemStorage* Weapons = GetWorld()->SpawnActor<AItemStorage>(WeaponStorage);
+			if (Weapons)
 			{
-				AWearpon* WeaponToEquip = GetWorld()->SpawnActor<AWearpon>(Weapons->WeaponMap[WeaponName]);
-				WeaponToEquip->Equip(this);
+				FString WeaponName = LoadGameInstance->CharacterStats.WeaponName;
+
+				if (Weapons->WeaponMap.Contains(WeaponName))
+				{
+					AWearpon* WeaponToEquip = GetWorld()->SpawnActor<AWearpon>(Weapons->WeaponMap[WeaponName]);
+					WeaponToEquip->Equip(this);
+				}
 			}
 		}
-	}
-	SetActorLocation(LoadGameInstance->CharacterStats.Location);
-	SetActorRotation(LoadGameInstance->CharacterStats.Rotation);
+		SetActorLocation(LoadGameInstance->CharacterStats.Location);
+		SetActorRotation(LoadGameInstance->CharacterStats.Rotation);
 
-	SetMovementStatus(EMovementStatus::EMS_Normal);
-	GetMesh()->bPauseAnims = false;
-	GetMesh()->bNoSkeletonUpdate = false;
+		SetMovementStatus(EMovementStatus::EMS_Normal);
+		GetMesh()->bPauseAnims = false;
+		GetMesh()->bNoSkeletonUpdate = false;
+	}
 }
 
 //Camera shake functionality

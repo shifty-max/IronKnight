@@ -39,5 +39,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void BlockCollisionRight();
 
+	virtual void Die(AActor* DamageCauser);
+
 	virtual void CombatOnOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 };

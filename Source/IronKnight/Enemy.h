@@ -206,7 +206,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StunEnd();
 
-	void Die(AActor* DamageCauser);
+	virtual void Die(AActor* DamageCauser);
 
 	//Checks if an enemy is alive, if not it can't make any harm to a player
 	bool Alive();
